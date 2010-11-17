@@ -28,11 +28,11 @@ IdleTimer = new Class({
 	
 	options: {
 		/*
-		onStart: $empty,
-		onStop: $empty,
-		onIdle: $empty,
-		onActive: $empty,
-		onTimeoutChanged: $empty,
+		onStart: function(){},
+		onStop: function(){},
+		onIdle: function(){},
+		onActive: function(){},
+		onTimeoutChanged: function(){},
 		*/
 		timeout: 60000,
 		events: ['mousemove', 'keydown', 'mousewheel', 'mousedown']
@@ -40,7 +40,7 @@ IdleTimer = new Class({
 	
 	initialize: function(element, options) {
 		this.setOptions(options);
-		this.element = $(element);
+		this.element = document.id(element);
 		this.activeBound = this.active.bind(this);
 		this.isIdle = false;
 		this.started = false;
@@ -50,10 +50,10 @@ IdleTimer = new Class({
 	 * Stops any existing timeouts and removes the bound events
 	 */
 	stop: function() {
-		$clear(this.timer);
+		clearTimeout(this.timer);
 		
 		// Remove bound events
-		for(var i in this.options.events) {
+		for(var i = 0; i < this.options.events.length; i++) {
 			this.element.removeEvent(this.options.events[i], this.activeBound);
 		}
 		this.bound = false;
@@ -69,7 +69,7 @@ IdleTimer = new Class({
 	 * call this method to prevent the idle event from being triggered.
 	 */
 	active: function() {
-		$clear(this.timer);
+		clearTimeout(this.timer);
 		if(this.isIdle) this.fireEvent('active');
 		this.isIdle = false;
 		this.start();
@@ -79,7 +79,7 @@ IdleTimer = new Class({
 	 * Fired when the user becomes idle
 	 */
 	idle: function() {
-		if(this.timer) $clear(this.timer); // If called manually, timer will have to be removed
+		if(this.timer) clearTimeout(this.timer); // If called manually, timer will have to be removed
 		this.isIdle = true;
 		this.fireEvent('idle');
 	},
@@ -89,7 +89,7 @@ IdleTimer = new Class({
 	 */
 	start: function() {
 		this.timer = this.idle.delay(this.options.timeout, this);
-		this.lastActive = $time();
+		this.lastActive = Date.now();
 		if(!this.bound) this.bind();
 		this.started = true;
 		return this;
@@ -99,7 +99,7 @@ IdleTimer = new Class({
 	 * Bind events to the element
 	 */
 	bind: function() {
-		for(var i in this.options.events) {
+		for(var i = 0; i < this.options.events.length; i++) {
 			this.element.addEvent(this.options.events[i], this.activeBound);
 		}
 		this.bound = true;
@@ -110,7 +110,7 @@ IdleTimer = new Class({
 	 * Returns how many seconds/milliseconds have passed since the user was last idle
 	 */
 	getIdleTime: function(returnSeconds) {
-		return returnSeconds ? Math.round(($time() - this.lastActive) / 1000) : $time() - this.lastActive;
+		return returnSeconds ? Math.round((Date.now() - this.lastActive) / 1000) : Date.now() - this.lastActive;
 	},
 	
 	/**
@@ -126,7 +126,7 @@ IdleTimer = new Class({
 		if(whenActive) return this; // The developer wants to wait until the next time the user is active before setting the new timeout
 		
 		// In all cases, we need a new timer
-		$clear(this.timer);
+		clearTimeout(this.timer);
 		
 		// Fire a new timeout event
 		this.fireEvent('timeoutChanged', newTime);
@@ -173,7 +173,7 @@ Element.Events.idle = {
 	onAdd: function(fn) {
 		var global = this.get ? false : true;
 		var idler = global ? window.idleTimer : this.get('idle');
-		if(global && !idler) { idler = window.idleTimer = new IdleTimer(this); }		
+		if(global && !idler) { idler = window.idleTimer = new IdleTimer(Browser.ie ? document : this); }
 		if(!idler.started) idler.start();
 		idler.addEvent('idle', fn);
 	}
